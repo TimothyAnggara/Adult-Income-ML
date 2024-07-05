@@ -1,0 +1,168 @@
+---
+title: "Adult Income"
+format: html
+editor: visual
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(httr)
+library(ggplot2)
+library(emmeans)
+library(patchwork)
+library(caret)
+```
+
+## Introduction
+
+Found this dataset from University California of Irvine and wanted to try and be able to classify whether an Adult in the United States was able to have an income of over \$50,000. This dataset was extracted in 1994 and as a result, if we adjust for inflation is \$105,961. Perhaps now it may not be as useful to classify whether an Adult in the United States of an income greater \$50,000 with these parameters but it may be insightful to find important details variable that may indicate a higher income individual
+
+### Data Cleaning
+
+There are some null values in this dataset which I have decided to remove from the original dataset
+
+```{r}
+
+url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
+
+temp_file <- tempfile()
+download.file(url, temp_file)
+
+column_names <- c("age", "workclass", "fnlwgt", "education", "education_num", 
+                  "marital_status", "occupation", "relationship", "race", 
+                  "sex", "capital_gain", "capital_loss", "hours_per_week", 
+                  "native_country", "income")
+
+adult_data <- read_csv(temp_file, col_names = column_names, na = "?")
+
+unlink(temp_file)
+
+original_size <- nrow(adult_data)
+
+adult_data_clean <- na.omit(adult_data)
+
+new_size <- nrow(adult_data_clean)
+
+adult_data_clean <- adult_data_clean %>%
+  select(-fnlwgt)
+
+columns_to_factor <- c("workclass", "education", "marital_status", "occupation", 
+                       "relationship", "race", "sex", "native_country", "income")
+
+adult_data_clean <- adult_data_clean %>%
+  mutate(across(all_of(columns_to_factor), as.factor))
+
+```
+
+After removing the fnlwgt variable and removing all the null values, we reduced our dataset from 32,561 to 30,162. I have also made most of the variables that R originally rendered as characters into factors which will later be used to train the classifier.
+
+### Investigating the dataset
+
+Since now we've cleaned it up of null values and correctly the data types. Let's explore the dataset and see if we can find any interesting patterns
+
+```{r}
+plot1 <- ggplot(adult_data_clean, aes(x = education, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Education",
+       x = "Education",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+plot2 <- ggplot(adult_data_clean, aes(x = age, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Age",
+       x = "Age",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+plot3 <- ggplot(adult_data_clean, aes(x = sex, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Sex",
+       x = "Sex",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+plot4 <- ggplot(adult_data_clean, aes(x = race, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Race",
+       x = "Race",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+plot5 <- ggplot(adult_data_clean, aes(x = occupation, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Occupation",
+       x = "Occupation",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+# Combine the plots into a grid
+(plot1 + plot2) / (plot3 + plot4 + plot5)
+
+```
+
+Although there are many interesting things we could find, I've highlighted some interesting ones I found We can see that in the Education and Income, higher educated people seem to be able to have a higher proportion of incomes greater than \$50,000 same with age and age.
+
+### Creating the Model
+
+After some digging around, we found that random forest seem to provide the best accuracy as well as simplicity for this data set.
+
+```{r}
+set.seed(123)
+k <- 10
+folds <- cut(seq(1, nrow(adult_data_clean)), breaks = k, labels = FALSE)
+
+# Perform k-fold cross-validation
+results <- data.frame()
+
+for(i in 1:k){
+  # Segment data by fold
+  testIndexes <- which(folds == i, arr.ind = TRUE)
+  testData <- adult_data_clean[testIndexes, ]
+  trainData <- adult_data_clean[-testIndexes, ]
+  
+  # Train the model
+  rf <- randomForest(income ~ ., data = trainData, importance = TRUE)
+  
+  # Predict on test data
+  predictions <- predict(rf, testData)
+  
+  # Calculate accuracy
+  accuracy <- sum(predictions == testData$income) / nrow(testData)
+  
+  # Store the result
+  results <- rbind(results, data.frame(Fold = i, Accuracy = accuracy))
+}
+
+# Calculate and print the average accuracy
+average_accuracy <- mean(results$Accuracy)
+print(paste("Average Accuracy: ", round(average_accuracy, 4)))
+
+# Print results of each fold
+print(results)
+
+# Train final model on the entire dataset
+rf_final <- randomForest(income ~ ., data = adult_data_clean, importance = TRUE)
+
+# Get variable importance
+importance <- importance(rf_final)
+print(importance)
+
+# Plotting variable importance
+varImpPlot(rf_final, main = "Variable Importance")
+```
+
+The analysis of feature importance from the Random Forest model reveals that certain variables significantly influence the prediction of an individual's income level. The most crucial feature is `capital_gain`, as evidenced by its highest MeanDecreaseAccuracy and MeanDecreaseGini values. This indicates that capital gains play a pivotal role in distinguishing high-income individuals from those earning less than \$50K. Similarly, `relationship` and `age` also show high importance scores, suggesting that personal relationships and age are strong indicators of income. For instance, individuals in certain relationship categories, such as married couples, and those in specific age groups, particularly older adults, are more likely to have higher incomes.
+
+Other notable features include `occupation`, `education`, and `hours_per_week`. The occupation and education level of an individual are critical in predicting their income, highlighting the impact of job roles and educational attainment on earning potential. For example, certain high-skilled occupations and advanced educational degrees correlate strongly with higher income levels. Additionally, the number of hours worked per week is a significant predictor, reflecting the direct relationship between work effort and income. Conversely, features like `native_country` and `race` have lower importance scores, indicating they contribute less to the model's predictive power. This comprehensive feature importance analysis helps in understanding the key drivers of income disparity and can inform policy-making and targeted interventions to address income inequality.

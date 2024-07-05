@@ -1,0 +1,136 @@
+---
+title: "Adult Income"
+format: html
+editor: visual
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(httr)
+library(ggplot2)
+library(emmeans)
+```
+
+## Introduction
+
+Found this dataset from University California of Irvine and wanted to try and be able to classify whether an Adult in the United States was able to have an income of over \$50,000. This dataset was extracted in 1994 and as a result, if we adjust for inflation is \$105,961. Perhaps now it may not be as useful to classify whether an Adult in the United States of an income greater \$50,000 with these parameters but it may be insightful to find important details variable that may indicate a higher income individual
+
+### Data Cleaning
+
+There are some null values in this dataset which I have decided to remove from the original dataset
+
+```{r}
+
+url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
+
+temp_file <- tempfile()
+download.file(url, temp_file)
+
+column_names <- c("age", "workclass", "fnlwgt", "education", "education_num", 
+                  "marital_status", "occupation", "relationship", "race", 
+                  "sex", "capital_gain", "capital_loss", "hours_per_week", 
+                  "native_country", "income")
+
+adult_data <- read_csv(temp_file, col_names = column_names, na = "?")
+
+unlink(temp_file)
+
+original_size <- nrow(adult_data)
+
+adult_data_clean <- na.omit(adult_data)
+
+new_size <- nrow(adult_data_clean)
+
+adult_data_clean <- adult_data_clean %>%
+  select(-fnlwgt)
+
+columns_to_factor <- c("workclass", "education", "marital_status", "occupation", 
+                       "relationship", "race", "sex", "native_country", "income")
+
+adult_data_clean <- adult_data_clean %>%
+  mutate(across(all_of(columns_to_factor), as.factor))
+
+```
+
+After removing the fnlwgt variable and removing all the null values, we reduced our dataset from 32,561 to 30,162. I have also made most of the variables that R originally rendered as characters into factors which will later be used to train the classifier.
+
+### Investigating the dataset
+
+Since now we've cleaned it up of null values and correctly the data types. Let's explore the dataset and see if we can find any interesting patterns
+
+```{r}
+ggplot(adult_data_clean, aes(x = occupation, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Occupation",
+       x = "Occupation",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+prop_occupation_data <- adult_data_clean %>%
+  group_by(occupation, income) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup()
+prop_occupation_data
+
+ggplot(adult_data_clean, aes(x = workclass, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Workclass",
+       x = "Occupation",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+prop_workclass_data <- adult_data_clean %>%
+  group_by(workclass, income) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup()
+prop_workclass_data
+
+ggplot(adult_data_clean, aes(x = sex, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Sex",
+       x = "Occupation",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+prop_sex_data <- adult_data_clean %>%
+  group_by(sex, income) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup()
+prop_sex_data
+
+ggplot(adult_data_clean, aes(x = race, fill = income)) +
+  geom_bar(position = "stack") +
+  labs(title = "Stacked Bar Chart of Income by Race",
+       x = "Occupation",
+       y = "Count",
+       fill = "Income") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5))
+
+prop_race_data <- adult_data_clean %>%
+  group_by(race, income) %>%
+  summarise(count = n()) %>%
+  mutate(proportion = count / sum(count)) %>%
+  ungroup()
+prop_race_data
+
+contingency_table <- table(adult_data_clean$occupation, adult_data_clean$income)
+chi_square_test <- chisq.test(contingency_table)
+print(chi_square_test)
+
+adult_data_clean$income_binary <- as.numeric(adult_data_clean$income == ">50K")
+
+# Fit logistic regression model
+log_model <- glm(income_binary ~ race, family = binomial, data = adult_data_clean)
+summary(log_model)
+```

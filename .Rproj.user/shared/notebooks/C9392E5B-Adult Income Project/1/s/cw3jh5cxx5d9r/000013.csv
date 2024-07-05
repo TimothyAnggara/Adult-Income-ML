@@ -1,0 +1,93 @@
+"1","
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.3/estimability_1.5.1.zip'
+"
+"2","Content type 'application/zip'"
+"2"," length 53002 bytes (51 KB)
+"
+"2","downloaded 51 KB
+
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.3/numDeriv_2016.8-1.1.zip'
+"
+"2","Content type 'application/zip'"
+"2"," length 116116 bytes (113 KB)
+"
+"2","downloaded 113 KB
+
+"
+"2","trying URL 'https://cran.rstudio.com/bin/windows/contrib/4.3/mvtnorm_1.2-5.zip'
+"
+"2","Content type 'application/zip'"
+"2"," length 778238 bytes (759 KB)
+"
+"2","downloaded 759 KB
+
+"
+"1","package ‘estimability’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘numDeriv’ successfully unpacked and MD5 sums checked
+"
+"1","package ‘mvtnorm’ successfully unpacked and MD5 sums checked
+"
+"1","
+"
+"1",""
+"1","The downloaded binary packages are in
+	C:\Users\andre\AppData\Local\Temp\RtmpqqaAVg\downloaded_packages"
+"1",""
+"1","
+"
+"2","installing the source package ‘emmeans’
+
+"
+"2","trying URL 'https://cran.rstudio.com/src/contrib/emmeans_1.10.3.tar.gz'
+"
+"2","Content type 'application/x-gzip'"
+"2"," length 1518766 bytes (1.4 MB)
+"
+"2","downloaded 1.4 MB
+
+"
+"1","* installing *source* package 'emmeans' ...
+"
+"1","** package 'emmeans' successfully unpacked and MD5 sums checked
+"
+"1","** using staged installation
+"
+"1","** R
+"
+"1","** data
+"
+"1","*** moving datasets to lazyload DB
+"
+"1","** inst
+"
+"1","** byte-compile and prepare package for lazy loading
+"
+"1","** help
+"
+"1","*** installing help indices
+"
+"1","*** copying figures
+"
+"1","** building package indices
+"
+"1","** installing vignettes
+"
+"1","** testing if installed package can be loaded from temporary location
+"
+"1","** testing if installed package can be loaded from final location
+"
+"1","** testing if installed package keeps a record of temporary installation path
+"
+"1","* DONE (emmeans)
+"
+"2","
+"
+"2",""
+"2","The downloaded source packages are in
+	‘C:\Users\andre\AppData\Local\Temp\RtmpqqaAVg\downloaded_packages’"
+"2",""
+"2","
+"
