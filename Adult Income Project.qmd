@@ -4,14 +4,14 @@ format: html
 editor: visual
 ---
 
-```{r}
+```{r, include=FALSE}
 library(readr)
 library(dplyr)
 library(httr)
 library(ggplot2)
 library(emmeans)
 library(patchwork)
-library(caret)
+library(randomForest)
 ```
 
 ## Introduction
@@ -61,7 +61,7 @@ After removing the fnlwgt variable and removing all the null values, we reduced 
 
 Since now we've cleaned it up of null values and correctly the data types. Let's explore the dataset and see if we can find any interesting patterns
 
-```{r}
+```{r, echo=FALSE}
 plot1 <- ggplot(adult_data_clean, aes(x = education, fill = income)) +
   geom_bar(position = "stack") +
   labs(title = "Stacked Bar Chart of Income by Education",
@@ -108,7 +108,11 @@ plot5 <- ggplot(adult_data_clean, aes(x = occupation, fill = income)) +
         plot.title = element_text(hjust = 0.5))
 
 # Combine the plots into a grid
-(plot1 + plot2) / (plot3 + plot4 + plot5)
+plot1
+plot2
+plot3
+plot4
+plot5
 
 ```
 
@@ -118,7 +122,7 @@ Although there are many interesting things we could find, I've highlighted some 
 
 After some digging around, we found that random forest seem to provide the best accuracy as well as simplicity for this data set.
 
-```{r}
+```{r, echo=FALSE}
 set.seed(123)
 k <- 10
 folds <- cut(seq(1, nrow(adult_data_clean)), breaks = k, labels = FALSE)
